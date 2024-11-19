@@ -2,6 +2,7 @@
 <html>
 
     <head>
+        <script type="module" src="https://cdn.jsdelivr.net/npm/textfit-web-component@1.0/textfit.js"></script>
 
         <meta charset="utf-8" />
         <title>Fam Secret Santa</title>
@@ -50,7 +51,8 @@
 
                 padding: 20px;
 
-                font-size: 10px;
+                font-size: 1.4rem;
+
                 text-decoration: none;
 
                 color: #FFFFFF;
@@ -183,13 +185,16 @@
                 </div>
             </div>
 
-            <a href="/create" class="spirit-of-christmas">
-                Create your own. Click here! 🎅
-            </a>
-            <img src="assets/fam.jpeg" class="fam" />
+                <a href="/create" class="spirit-of-christmas">
+                <text-fit max-lines="1" >
+                    Create your own. Click here! 🎅
+                    </text-fit>
+                </a>
+            <img src="assets/fam.jpeg" class="fam" lazy />
         </div>
 
     </body>
+
     <script>
 
         var queryString = _.chain( location.search.slice( 1 ).split( /&/g ) )

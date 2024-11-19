@@ -2,14 +2,15 @@
 <html>
 
     <head>
-
+        <script type="module" src="https://cdn.jsdelivr.net/npm/textfit-web-component@1.0/textfit.js"></script>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=content_copy" />
         <meta charset="utf-8" />
         <title>Secret Santa Generator</title>
 
-        <script src="vendors/Lodash-3.10.1.js"></script>
-        <script src="vendors/Cryptojs.aes-3.1.2.js"></script>
+        <script src="/vendors/Lodash-3.10.1.js"></script>
+        <script src="/vendors/Cryptojs.aes-3.1.2.js"></script>
 
-        <script src="./SecretSanta.js"></script>
+        <script src="/SecretSanta.js"></script>
 
         <style>
 
@@ -27,15 +28,18 @@
             }
 
             body {
-                background-image: url(assets/santa.png);
+                background-image: url(/assets/santa.png);
                 background-position: bottom right;
                 background-repeat: no-repeat;
-
+                background-color: #90f3a9;
                 font-family: 'Comic Sans MS';
             }
 
             .main {
-                display: flex;
+                display: grid;
+                flex-direction: row;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr;
             }
 
             .part {
@@ -135,7 +139,13 @@
 
                 padding: 5px 8px;
             }
-
+            .result-copy {
+                width: 10%;
+            }
+            .result-copy:hover {
+                cursor: pointer;
+                background-color: #e0e0e0;
+            }
             .result-link {
                 width: 100%;
                 overflow: hidden;
@@ -144,6 +154,17 @@
                 white-space: nowrap;
             }
 
+            .toast {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                padding: 10px;
+                background-color: #333;
+                color: #fff;
+                font-size: 1.2rem;
+                text-align: center;
+            }
         </style>
 
     </head>
@@ -151,20 +172,23 @@
     <body>
 
         <div class="main">
-
             <div class="part" style="overflow-y: auto">
+                <div id="result" class="result none"></div>
                 <div class="instructions">
-                    <h1><img src="assets/mistletoe.png" style="vertical-align: middle" /> Secret Samta Generator</h1>
-                    <p>This was made for Cat Moms Support Group</p>
+                    <h1><img src="/assets/mistletoe.png" style="vertical-align: middle" /> Secret Samta Generator</h1>
+                    <p>This was made to help support the Cat Moms Support Group</p>
                 </div>
+
             </div>
 
             <form id="form" class="part">
                 <textarea id="input" class="input" autofocus></textarea>
-                <button type="submit" class="generate">Generate your pairings</button>
-                <div id="result" class="result none"></div>
+                <button type="submit" class="generate">
+                <text-fit max-lines="1" >
+                    Generate your pairings
+                </text-fit>
+            </button>
             </form>
-
         </div>
 
         <script id="input-placeholder" type="text/placeholder">
@@ -278,6 +302,27 @@
               tr.className = 'result-row';
               table.appendChild( tr );
 
+              var tdCopy = document.createElement( 'td' );
+              tdCopy.className = 'result-copy';
+              tdCopy.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
+              tdCopy.addEventListener('click', function(e) {
+                e.preventDefault();
+                var link = e.currentTarget.parentElement.querySelector('a');
+                var name = e.currentTarget.parentElement.querySelector('.result-name').innerText;
+                navigator.clipboard.writeText(link.href);
+
+                // popup a toast
+                var toast = document.createElement('div');
+                toast.classList.add('toast');
+                toast.innerHTML = `Copied to clipboard ${name}'s link`;
+                document.body.appendChild(toast);
+                setTimeout(function() {
+                    toast.remove();
+                }, 2000);
+
+            });
+              tr.appendChild( tdCopy );
+
               var tdName = document.createElement( 'td' );
               tdName.className = 'result-name';
               tr.appendChild( tdName );
@@ -292,7 +337,7 @@
               var key = String( _.random( 0x0000, 0xFFFF ) );
               var encryptedPairing = CryptoJS.AES.encrypt( pairings[ name ], key );
 
-              var pairingPath = window.location.pathname.replace( /[^/]+$/, '' );
+              var pairingPath = window.location.pathname.replace( /[^/]+$/, '' ).replace('/create', '');
               var pairingQueryString = '?name=' + encodeURIComponent( prettyName ) + '&key=' + encodeURIComponent( key ) + '&pairing=' + encodeURIComponent( encryptedPairing );
 
               if ( isAmazonEnabled() )
