@@ -170,6 +170,7 @@
                 z-index: -1;
                 overflow: hidden;
                 height: 100vh;
+                filter: blur(5px);
             }
         </style>
 
@@ -185,10 +186,10 @@
 
                     <div class="title">Hi <span id="name"></span>! You've been paired with</div>
                   
-                    <div class="pairing">
+                    <text-fit class="pairing" max-lines="1">
                         <div id="pairing-name"></div>
                         <div id="pairing-details"></div>
-                    </div>
+                    </text-fit>
 
                     <div class="title">Good luck!</div>
 
