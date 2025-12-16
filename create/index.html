@@ -5,6 +5,7 @@
         <script type="module" src="https://cdn.jsdelivr.net/npm/textfit-web-component@1.0/textfit.js"></script>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=content_copy" />
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Secret Santa Generator</title>
 
         <script src="/vendors/Lodash-3.10.1.js"></script>
@@ -28,11 +29,13 @@
             }
 
             body {
-                background-image: url(/assets/santa.png);
-                background-position: bottom right;
-                background-repeat: no-repeat;
+                /* Use a semi-transparent white layer under the image to give a faded effect */
+                background-image: linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)), url(/assets/santa.png);
+                background-position: bottom right, bottom right;
+                background-repeat: no-repeat, no-repeat;
                 background-color: #90f3a9;
                 font-family: 'Comic Sans MS';
+                background-size: auto, contain;
             }
 
             .main {
@@ -114,8 +117,15 @@
                 background: #FFFFFF;
             }
 
-            .result a {
-                color: blue;
+            
+
+            .result-instruction {
+                font-weight: 700;
+                margin-bottom: 10px;
+                color: #0b5d0b;
+                background: rgba(14, 196, 14, 0.08);
+                padding: 8px 12px;
+                border-radius: 8px;
             }
 
             .result.none {
@@ -134,25 +144,66 @@
                 width: 100%;
             }
 
-            .result-name {
-                width: 30%;
-
-                padding: 5px 8px;
+            /* Layout each result row as a grid so the participant name gets
+               priority (can take the remaining space) and the copy button
+               remains visible. The link will be hidden on narrow widths. */
+            .result-row {
+                display: grid;
+                grid-template-columns: auto 1fr auto; /* copy | name | link */
+                gap: 12px;
+                align-items: center;
             }
+
             .result-copy {
-                width: 10%;
+                width: auto;
+                text-align: center;
+                vertical-align: middle;
             }
-            .result-copy:hover {
+            .result-copy button.copy-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #0CB50C;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 8px;
+                width: 56px;
+                height: 40px;
+                font-size: 1.1rem;
                 cursor: pointer;
-                background-color: #e0e0e0;
             }
-            .result-link {
-                width: 100%;
-                overflow: hidden;
 
-                text-overflow: ellipsis;
-                white-space: nowrap;
+            .result-copy button.copy-btn:hover {
+                background-color: #09a10a;
+                transform: translateY(-1px);
             }
+
+            /* Make the participant name more prominent and allow wrapping */
+            .result-name {
+                padding: 5px 8px;
+                font-weight: 700;
+                font-size: 1.05rem;
+                white-space: normal; /* allow wrapping so full name is visible */
+                overflow: visible;
+                min-width: 0; /* allow flexing in grid */
+            }
+
+            /* Ensure table cells vertically align */
+            .result-table td {
+                vertical-align: middle;
+            }
+
+            .result-copy button.copy-btn:focus {
+                outline: 3px solid rgba(230,224,32,0.6);
+            }
+
+            .result-copy .coffee {
+                font-size: 1.1rem;
+            }
+
+            
 
             .toast {
                 position: fixed;
@@ -165,6 +216,61 @@
                 font-size: 1.2rem;
                 text-align: center;
             }
+
+            /* Responsive: stack the two columns on small screens so
+               the results/links appear above the input form */
+            @media (max-width: 900px) {
+                .main {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: minmax(auto, 1fr) minmax(auto, 1fr)
+                }
+
+                .part {
+                    padding: 12px;
+                }
+
+                .instructions {
+                    margin: 10px 0;
+                }
+
+                .generate {
+                    height: 80px;
+                    font-size: 28px;
+                }
+            }
+
+            /* Emphasize the "coffee" generate button */
+            .generate .coffee {
+                margin-right: 10px;
+                font-size: 1.4em;
+                vertical-align: middle;
+            }
+
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.04); }
+                100% { transform: scale(1); }
+            }
+            /* On narrow screens hide the long link so the name gets full width */
+            @media (max-width: 740px) {
+                .result-row {
+                    grid-template-columns: 56px 1fr; /* fixed copy button then name */
+                }
+
+                
+
+                .result-copy {
+                    width: 56px;
+                }
+
+                .result-copy button.copy-btn {
+                    width: 44px;
+                    height: 36px;
+                    padding: 6px;
+                    font-size: 1rem;
+                }
+            }
+            
         </style>
 
     </head>
@@ -183,7 +289,7 @@
 
             <form id="form" class="part">
                 <textarea id="input" class="input" autofocus></textarea>
-                <button type="submit" class="generate">
+                <button type="submit" class="generate" title="Click here to brew the pairings">
                 <text-fit max-lines="1" >
                     Generate your pairings
                 </text-fit>
@@ -287,6 +393,12 @@
 
           result.innerHTML = '';
 
+          // Instruction text at top of results
+          var instruction = document.createElement('div');
+          instruction.className = 'result-instruction';
+          instruction.innerText = "Click copy and then send the link privately to each person";
+          result.appendChild(instruction);
+
           var table = document.createElement( 'table' );
           table.className = 'result-table';
           result.appendChild( table );
@@ -304,35 +416,44 @@
 
               var tdCopy = document.createElement( 'td' );
               tdCopy.className = 'result-copy';
-              tdCopy.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
-              tdCopy.addEventListener('click', function(e) {
-                e.preventDefault();
-                var link = e.currentTarget.parentElement.querySelector('a');
-                var name = e.currentTarget.parentElement.querySelector('.result-name').innerText;
-                navigator.clipboard.writeText(link.href);
 
-                // popup a toast
-                var toast = document.createElement('div');
-                toast.classList.add('toast');
-                toast.innerHTML = `Copied to clipboard ${name}'s link`;
-                document.body.appendChild(toast);
-                setTimeout(function() {
-                    toast.remove();
-                }, 2000);
+              var copyBtn = document.createElement('button');
+              copyBtn.className = 'copy-btn';
+              copyBtn.setAttribute('type', 'button');
+              copyBtn.setAttribute('aria-label', 'Copy pairing link for ' + name);
+              copyBtn.setAttribute('title', 'Copy pairing link for ' + name);
+              copyBtn.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
 
-            });
+              // click handler reads the URL directly from the button's data-href
+              copyBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  var name = e.currentTarget.getAttribute('data-name') || e.currentTarget.parentElement.parentElement.querySelector('.result-name').innerText;
+                  var href = e.currentTarget.getAttribute('data-href') || '';
+                  navigator.clipboard.writeText(href);
+
+                  var toast = document.createElement('div');
+                  toast.classList.add('toast');
+                  toast.innerHTML = `Copied to clipboard ${name}'s link`;
+                  document.body.appendChild(toast);
+                  setTimeout(function() { toast.remove(); }, 2000);
+              });
+
+              // keyboard support: Enter/Space to copy
+              copyBtn.addEventListener('keydown', function(e) {
+                  if ( e.key === 'Enter' || e.key === ' ' ) {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                  }
+              });
+
+              tdCopy.appendChild(copyBtn);
               tr.appendChild( tdCopy );
 
               var tdName = document.createElement( 'td' );
               tdName.className = 'result-name';
               tr.appendChild( tdName );
 
-              var tdLink = document.createElement( 'td' );
-              tdLink.className = 'result-link';
-              tr.appendChild( tdLink );
-
-              var link = document.createElement( 'a' );
-              tdLink.appendChild( link );
+              // No separate link cell anymore: URL stored on the copy button
 
               var key = String( _.random( 0x0000, 0xFFFF ) );
               var encryptedPairing = CryptoJS.AES.encrypt( pairings[ name ], key );
@@ -345,11 +466,16 @@
 
               tdName.innerText = name;
 
-              link.addEventListener( 'click', protect );
-              link.setAttribute( 'data-name', name );
-              link.href = window.location.protocol + '//' + window.location.host + pairingPath + pairingQueryString;
-              link.target = '_blank';
-              link.innerText = link.href;
+              var href = window.location.protocol + '//' + window.location.host + pairingPath + pairingQueryString;
+              copyBtn.setAttribute('data-href', href);
+              copyBtn.setAttribute('data-name', name);
+
+              // briefly pulse the copy button to draw attention
+              (function(btn){
+                  if (!btn) return;
+                  btn.classList.add('pulse');
+                  setTimeout(function(){ btn.classList.remove('pulse'); }, 4500);
+              })( copyBtn );
 
           }
 
@@ -358,18 +484,20 @@
       function updateAmazon() {
 
           var result = document.getElementById( 'result' );
-          var links = result.getElementsByTagName( 'a' );
+          var buttons = result.querySelectorAll( '.copy-btn' );
 
-          for ( var t = 0; t < links.length; ++t ) {
+          for ( var t = 0; t < buttons.length; ++t ) {
 
-              var link = links[t];
+              var btn = buttons[t];
+
+              var href = btn.getAttribute('data-href') || '';
 
               if ( isAmazonEnabled() )
-                  link.href += '&extra=1';
+                  href += '&extra=1';
               else
-                  link.href = link.href.replace( /&extra=[01]/, '' );
+                  href = href.replace( /&extra=[01]/, '' );
 
-              link.innerText = link.href;
+              btn.setAttribute('data-href', href);
 
           }
 
@@ -414,6 +542,14 @@
                   return error( 'Syntax error: "' + lines[ t ] + '" isn\'t valid' );
 
               var name = match[ 1 ];
+              // detect duplicate names (exact string match)
+              if ( typeof seenNames === 'undefined' )
+                  var seenNames = Object.create(null);
+
+              if ( seenNames[ name ] ) {
+                  return error('Duplicate name on line ' + (t+1) + ': "' + name + '" — please change this so each participant will be able to know which person they need to buy a gift for.');
+              }
+              seenNames[ name ] = true;
               var rules = match[ 2 ] ? match[ 2 ].match(/[!=][^!=]+/g) : null;
 
               var person = santa.add( name );
@@ -446,15 +582,7 @@
 
       }
 
-      function protect( e ) {
-
-          var name = e.currentTarget.getAttribute( 'data-name' );
-
-          if ( ! confirm( 'If you click this link, you will be revealed ' + name + '\'s pairing! Are you sure you want to do this? Only do this if you\'re actually ' + name + '.\n\nUse right-click to copy the link target instead.' ) ) {
-              e.preventDefault();
-          }
-
-      }
+      
 
     </script>
 
@@ -471,6 +599,8 @@
         document.getElementById( 'form' ).addEventListener( 'submit', generate );
 
         restore();
+
+        
 
     </script>
 
